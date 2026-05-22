@@ -7,6 +7,10 @@
   const weeklyTitle = document.querySelector("#weeklyTitle");
   const galleryGrid = document.querySelector("#galleryGrid");
   const galleryEmpty = document.querySelector("#galleryEmpty");
+  const galleryLoadMore = document.querySelector("#galleryLoadMore");
+  const surfacesGrid = document.querySelector("#surfacesGrid");
+  const surfacesEmpty = document.querySelector("#surfacesEmpty");
+  const surfacesLoadMore = document.querySelector("#surfacesLoadMore");
   const template = document.querySelector("#galleryItemTemplate");
   const lightbox = document.querySelector("#lightbox");
   const lightboxImage = document.querySelector("#lightboxImage");
@@ -14,8 +18,30 @@
   const closeButton = document.querySelector(".lightbox-close");
   const previousButton = document.querySelector(".lightbox-nav.previous");
   const nextButton = document.querySelector(".lightbox-nav.next");
+  const pageSize = 8;
 
-  let galleryItems = [];
+  const galleryState = {
+    main: {
+      id: "main",
+      items: [],
+      rendered: 0,
+      grid: galleryGrid,
+      empty: galleryEmpty,
+      loadMore: galleryLoadMore,
+      loadMoreText: "Load more artwork"
+    },
+    surfaces: {
+      id: "surfaces",
+      items: [],
+      rendered: 0,
+      grid: surfacesGrid,
+      empty: surfacesEmpty,
+      loadMore: surfacesLoadMore,
+      loadMoreText: "Load more surface art"
+    }
+  };
+
+  let lightboxItems = [];
   let activeIndex = 0;
 
   const safeDecode = (value) => {
@@ -70,7 +96,7 @@
 
       return await response.json();
     } catch (error) {
-      return { weekly: [], gallery: [] };
+      return { weekly: [], gallery: [], surfaces: [] };
     }
   };
 
@@ -89,44 +115,85 @@
     weeklyTitle.textContent = image.title;
   };
 
-  const setGallery = (images) => {
-    galleryGrid.replaceChildren();
-    galleryItems = images;
+  const updateLoadMore = (gallery) => {
+    const remaining = gallery.items.length - gallery.rendered;
 
-    if (!images.length) {
-      galleryEmpty.classList.add("is-visible-empty");
-      revealNow(galleryEmpty);
+    if (remaining <= 0) {
+      gallery.loadMore.hidden = true;
       return;
     }
 
-    galleryEmpty.classList.remove("is-visible-empty");
-
-    const fragment = document.createDocumentFragment();
-    images.forEach((image, index) => {
-      const node = template.content.firstElementChild.cloneNode(true);
-      const button = node.querySelector(".gallery-button");
-      const img = node.querySelector("img");
-      const title = node.querySelector(".piece-title");
-      const tilt = ((index % 5) - 2) * 0.7;
-
-      node.style.setProperty("--tilt", `${tilt}deg`);
-      node.style.setProperty("--reveal-rotate", `${tilt}deg`);
-      button.dataset.index = String(index);
-      img.src = image.src;
-      img.alt = image.title;
-      img.loading = "lazy";
-      img.decoding = "async";
-      title.textContent = image.title;
-      fragment.appendChild(node);
-    });
-
-    galleryGrid.appendChild(fragment);
-    observeReveals(galleryGrid.querySelectorAll(".reveal"));
+    gallery.loadMore.hidden = false;
+    gallery.loadMore.textContent = `${gallery.loadMoreText} (${remaining} more)`;
   };
 
-  const openLightbox = (index) => {
+  const createGalleryNode = (gallery, image, index) => {
+    const node = template.content.firstElementChild.cloneNode(true);
+    const button = node.querySelector(".gallery-button");
+    const img = node.querySelector("img");
+    const title = node.querySelector(".piece-title");
+    const tilt = ((index % 5) - 2) * 0.7;
+
+    node.style.setProperty("--tilt", `${tilt}deg`);
+    node.style.setProperty("--reveal-rotate", `${tilt}deg`);
+    button.dataset.gallery = gallery.id;
+    button.dataset.index = String(index);
+    img.src = image.src;
+    img.alt = image.title;
+    img.loading = "lazy";
+    img.decoding = "async";
+    title.textContent = image.title;
+
+    return node;
+  };
+
+  const renderNextPage = (gallery) => {
+    const fragment = document.createDocumentFragment();
+    const start = gallery.rendered;
+    const end = Math.min(start + pageSize, gallery.items.length);
+
+    gallery.items.slice(start, end).forEach((image, offset) => {
+      fragment.appendChild(createGalleryNode(gallery, image, start + offset));
+    });
+
+    gallery.grid.appendChild(fragment);
+    gallery.rendered = end;
+    observeReveals(gallery.grid.querySelectorAll(".reveal:not(.is-visible)"));
+    updateLoadMore(gallery);
+  };
+
+  const scrollToCurrentHash = () => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) {
+      return;
+    }
+
+    const target = document.getElementById(safeDecode(hash));
+    if (target) {
+      requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
+    }
+  };
+
+  const setGallery = (gallery, images) => {
+    gallery.grid.replaceChildren();
+    gallery.items = images;
+    gallery.rendered = 0;
+
+    if (!images.length) {
+      gallery.empty.classList.add("is-visible-empty");
+      gallery.loadMore.hidden = true;
+      revealNow(gallery.empty);
+      return;
+    }
+
+    gallery.empty.classList.remove("is-visible-empty");
+    renderNextPage(gallery);
+  };
+
+  const openLightbox = (items, index) => {
+    lightboxItems = items;
     activeIndex = index;
-    const image = galleryItems[activeIndex];
+    const image = lightboxItems[activeIndex];
 
     if (!image) {
       return;
@@ -146,12 +213,12 @@
   };
 
   const moveLightbox = (step) => {
-    if (!galleryItems.length) {
+    if (!lightboxItems.length) {
       return;
     }
 
-    const nextIndex = (activeIndex + step + galleryItems.length) % galleryItems.length;
-    openLightbox(nextIndex);
+    const nextIndex = (activeIndex + step + lightboxItems.length) % lightboxItems.length;
+    openLightbox(lightboxItems, nextIndex);
   };
 
   const revealNow = (element) => {
@@ -182,13 +249,26 @@
     elements.forEach((element) => revealObserver.observe(element));
   };
 
-  galleryGrid.addEventListener("click", (event) => {
+  document.addEventListener("click", (event) => {
     const button = event.target.closest(".gallery-button");
     if (!button) {
       return;
     }
 
-    openLightbox(Number(button.dataset.index));
+    const gallery = galleryState[button.dataset.gallery];
+    if (!gallery) {
+      return;
+    }
+
+    openLightbox(gallery.items, Number(button.dataset.index));
+  });
+
+  galleryLoadMore.addEventListener("click", () => {
+    renderNextPage(galleryState.main);
+  });
+
+  surfacesLoadMore.addEventListener("click", () => {
+    renderNextPage(galleryState.surfaces);
   });
 
   closeButton.addEventListener("click", closeLightbox);
@@ -225,13 +305,16 @@
     const manifest = await loadManifest();
     const weekly = sortNewestByName(uniqueImages((manifest.weekly || []).map(normalizeImage)));
     const gallery = sortNewestByName(uniqueImages((manifest.gallery || []).map(normalizeImage)));
+    const surfaces = sortNewestByName(uniqueImages((manifest.surfaces || []).map(normalizeImage)));
     const featured = weekly[0] || gallery[0];
     const previousPieces = uniqueImages([...gallery, ...weekly.slice(1)]).filter(
       (item) => !featured || item.src !== featured.src
     );
 
     setWeeklyArt(featured);
-    setGallery(previousPieces);
+    setGallery(galleryState.main, previousPieces);
+    setGallery(galleryState.surfaces, surfaces);
+    scrollToCurrentHash();
   };
 
   init();

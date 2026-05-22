@@ -30,6 +30,7 @@
       <nav class="site-nav" aria-label="Sections">
         <a href="#weekly">Weekly</a>
         <a href="#gallery">Gallery</a>
+        <a href="#surfaces">Murals</a>
         <a href="#about">About</a>
       </nav>
     </header>
@@ -78,6 +79,36 @@
 
         <div id="galleryEmpty" class="gallery-empty reveal">
           <p>The gallery walls are waiting for their first pieces.</p>
+        </div>
+
+        <div class="load-more-wrap">
+          <button id="galleryLoadMore" class="load-more-button" type="button" hidden>
+            Load more artwork
+          </button>
+        </div>
+      </section>
+
+      <section class="gallery-section surface-section gallery-room" id="surfaces" aria-labelledby="surfaces-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Murals, homes, and painted places</p>
+          <h2 id="surfaces-title">Art That Lives on Surfaces</h2>
+          <p>
+            A place for Sharon's murals, house paintings, hand-painted objects,
+            and the pieces that turn rooms, porches, tables, and everyday things
+            into something worth stopping for.
+          </p>
+        </div>
+
+        <div id="surfacesGrid" class="gallery-grid surface-grid" aria-live="polite"></div>
+
+        <div id="surfacesEmpty" class="gallery-empty reveal">
+          <p>The surface-art wall is ready for murals and painted treasures.</p>
+        </div>
+
+        <div class="load-more-wrap">
+          <button id="surfacesLoadMore" class="load-more-button" type="button" hidden>
+            Load more surface art
+          </button>
         </div>
       </section>
 

@@ -1,3 +1,23 @@
+// Initialize and update visitor counter
+(function () {
+  const counterElement = document.querySelector("#visitorCount");
+  const storageKey = "visitorCount";
+  
+  // Get current count from localStorage or start at 25
+  let count = parseInt(localStorage.getItem(storageKey)) || 25;
+  
+  // Increment count
+  count++;
+  
+  // Save updated count
+  localStorage.setItem(storageKey, count);
+  
+  // Update display
+  if (counterElement) {
+    counterElement.textContent = count;
+  }
+})();
+
 (function () {
   const imagePattern = /\.(png|apng|jpg|jpeg|webp|gif)$/i;
   const manifestUrl = new URL("art-manifest.json", document.baseURI);

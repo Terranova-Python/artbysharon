@@ -85,6 +85,33 @@ button {
   transform: translateY(0);
 }
 
+.visitor-counter {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1.2rem;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 0 0 12px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgb(29 37 40 / 20%);
+}
+
+.visitor-label {
+  opacity: 0.9;
+}
+
+.visitor-count {
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
 .site-header {
   position: sticky;
   top: 0;

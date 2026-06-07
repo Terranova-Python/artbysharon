@@ -4,7 +4,7 @@
   const storageKey = "visitorCount";
   
   // Get current count from localStorage or start at 25
-  let count = parseInt(localStorage.getItem(storageKey)) || 32;
+  let count = parseInt(localStorage.getItem(storageKey)) || 56;
   
   // Increment count
   count++;
